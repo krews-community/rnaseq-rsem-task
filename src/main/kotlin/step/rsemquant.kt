@@ -1,18 +1,11 @@
 package step
-import mu.KotlinLogging
+
 import util.*
 import java.nio.file.*
 import util.CmdRunner
-import java.io.BufferedReader
-import java.io.FileReader
-import com.squareup.moshi.Moshi
 import java.io.File
-import java.time.LocalDate
 import java.util.*
 import kotlin.io.createTempDir
-
-private val log = KotlinLogging.logger {}
-var moshi = Moshi.Builder().build()
 
 data class RSEMParameters (
     val index: Path,
