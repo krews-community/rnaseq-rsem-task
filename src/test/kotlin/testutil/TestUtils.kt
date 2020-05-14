@@ -3,13 +3,13 @@ package testutil
 import java.nio.file.*
 import util.CmdRunner
 import util.*
+import java.security.MessageDigest
 
 val cmdRunner = TestCmdRunner()
 
 class TestCmdRunner : CmdRunner {
-    override fun run(cmd: String) = exec("docker", "exec", "rnaseq-rsemquant-base", "sh", "-c", cmd)
-    override fun runCommand(cmd: String):String? = getCommandOutput("docker", "exec", "rnaseq-rsemquant-base", "sh", "-c", cmd)
-
+    override fun run(cmd: String) = exec("docker", "exec", "rnaseq-quant-base", "sh", "-c", cmd)
+    override fun runCommand(cmd: String): String? = getCommandOutput("docker", "exec", "rnaseq-quant-base", "sh", "-c", cmd)
 }
 
 fun copyDirectory(fromDir: Path, toDir: Path) {
@@ -23,18 +23,50 @@ fun copyDirectory(fromDir: Path, toDir: Path) {
 }
 
 fun setupTest() {
-    cleanupTest()
-    // Copy all resource files from "test-input-files" dirs into
-    // docker mounted working /tmp dir
-    copyDirectory(testInputResourcesDir, testInputDir)
+    exec(
+        "docker", "run", "--name", "rnaseq-quant-base", "--rm", "-i",
+        "-t", "-d", "-v", "${testInputResourcesDir}:${testInputResourcesDir}",
+        "-v", "${testDir}:${testDir}", "genomealmanac/rnaseq-quant-base"
+    )
 }
 
 fun cleanupTest() {
-    if (Files.exists(testInputDir)) {
+    testDir.toFile().deleteRecursively()
+}
 
-        Files.walk(testInputDir).sorted(Comparator.reverseOrder()).forEach { Files.delete(it) }
+fun pearsonr(a: Map<String, Float>, b:Map<String, Float>): Float {
+    val keys = a.keys.toList()
+    return pearsonr(keys.map { a[it]!! }, keys.map { b[it]!! })
+}
+
+fun pearsonr(a: List<Float>, b: List<Float>): Float {
+    
+    var sumX: Float = 0.0F
+    var sumY: Float = 0.0F
+    var sumXY: Float = 0.0F
+    var squareSumX: Float = 0.0F
+    var squareSumY: Float = 0.0F
+
+    a.forEachIndexed { i, it ->
+        sumX += it
+        sumY += b[i]
+        sumXY += it * b[i]
+        squareSumX += it * it
+        squareSumY += b[i] * b[i]
     }
-    if (Files.exists(testOutputDir)) {
-        Files.walk(testOutputDir).sorted(Comparator.reverseOrder()).forEach { Files.delete(it) }
+
+    return ((a.size * sumXY - sumX * sumY) / Math.sqrt(
+        ((a.size * squareSumX - sumX * sumX) * (a.size * squareSumY - sumY * sumY)).toDouble()
+    )).toFloat()
+
+}
+
+fun readQuantifications(file: Path): Map<String, Float> {
+    val m: MutableMap<String, Float> = mutableMapOf()
+    file.toFile().forEachLine {
+        val s = it.split('\t')
+        if (s.size < 6 || s[5] == "TPM") return@forEachLine
+        m[s[1]] = s[5].toFloat()
     }
+    return m
 }

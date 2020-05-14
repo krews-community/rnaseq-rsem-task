@@ -1,3 +1,3 @@
 #!/bin/bash
 
-docker stop rnaseq-rsemquant-base
+docker stop rnaseq-quant-base

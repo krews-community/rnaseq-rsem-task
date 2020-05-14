@@ -22,7 +22,6 @@ RUN wget https://github.com/deweylab/RSEM/archive/v1.2.31.zip && \
 
 ENV PATH="/software/RSEM-1.2.31:${PATH}"
 
-
 FROM openjdk:8-jdk-alpine as build
 COPY . /src
 WORKDIR /src
@@ -31,4 +30,4 @@ RUN ./gradlew clean shadowJar
 
 FROM base
 RUN mkdir /app
-COPY --from=build /src/build/rnaseq-rsemquant-*.jar /app/rnaseq.jar
+COPY --from=build /src/build/*.jar /app/rsem.jar

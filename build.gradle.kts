@@ -8,8 +8,8 @@ plugins {
 }
 
 group = "com.genomealmanac.rnaseq"
-version = "1.0.0"
-val artifactID = "rnaseq-rsemquant"
+version = "1.0.1"
+val artifactID = "rsem"
 
 repositories {
     mavenCentral()

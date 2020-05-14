@@ -9,49 +9,54 @@ import com.squareup.moshi.Moshi
 import java.io.File
 import java.time.LocalDate
 import java.util.*
+import kotlin.io.createTempDir
 
 private val log = KotlinLogging.logger {}
 var moshi = Moshi.Builder().build()
-data class qcr(val no_of_genes_detected:Int)
 
-fun CmdRunner.rsemquant(rsemIndex:Path,annoBamFile:Path, pairedEnd:Boolean,readStrand:String,rndSeed:Int,ncpus:Int,ramGB:Int,outDir:Path,outputPrefix:String)  {
-    log.info { "Make output Directory" }
-    Files.createDirectories(outDir)
-    //untar index file
-    val endness = if(pairedEnd) "--paired-end" else ""
-    val rStrand = if(readStrand=="Unstranded") 0.5 else if(readStrand=="forward")  1 else 0
-   this.run("tar xvf $rsemIndex -C $outDir")
-    val RSEM_COMMAND = "rsem-calculate-expression --bam \\\n" +
-    "--estimate-rspd \\\n"+
-    "--calc-ci \\\n"+
-    "--seed ${rndSeed} \\\n" +
-    "-p ${ncpus} \\\n" +
-    "--no-bam-output \\\n" +
-    "--ci-memory ${ramGB}000 \\\n" +
-    "--forward-prob ${rStrand} \\\n" +
-    "${endness} \\\n" +
-    "${annoBamFile} \\\n" +
-    "${outDir.resolve("out").resolve("rsem")} \\\n" +
-    "${outDir.resolve("${outputPrefix}_rsem")} \\\n"
-        //    "--outFileNamePrefix ${outDir}/testrsemquant"
+data class RSEMParameters (
+    val index: Path,
+    val bam: Path,
+    val outputDirectory: Path,
+    val strand: String = "unstranded",
+    val seed: Int? = null,
+    val cores: Int = 1,
+    val ram: Int = 16,
+    val outputPrefix: String = "output",
+    val pairedEnd: Boolean
+)
 
-    this.run(RSEM_COMMAND)
+val FORWARD_PROB: Map<String, Float> = mapOf(
+    "unstranded" to 0.5F,
+    "forward" to 1.0F,
+    "reverse" to 0.0F
+)
 
-  //  this.run("mv ${outDir.resolve("out").resolve("*.genes.results")} ${outDir}")
-  //  this.run("mv ${outDir.resolve("out").resolve("*.isoforms.results")} ${outDir}")
+fun CmdRunner.runRSEMQuant(parameters: RSEMParameters)  {
 
+    // create output directory, unpack index
+    val indexDir = parameters.outputDirectory.resolve("index")
+    Files.createDirectories(indexDir)
+    this.run("tar xvf ${parameters.index} -C $indexDir")
+    
+    // run RSEM
+    this.run("""
+        rsem-calculate-expression \
+            --bam \
+            --estimate-rspd \
+            --calc-ci \
+            ${if (parameters.seed !== null) "--seed ${parameters.seed}" else "" } \
+            -p ${parameters.cores} \
+            --no-bam-output \
+            --ci-memory ${parameters.ram}000 \
+            --forward-prob ${FORWARD_PROB[parameters.strand]} \
+            ${ if (parameters.pairedEnd) "--paired-end" else "" } \
+            ${parameters.bam} \
+            ${indexDir.resolve(parameters.index.getFileName().toString().split(".tar.gz")[0])} \
+            ${parameters.outputDirectory.resolve("${parameters.outputPrefix}")}
+    """)
 
-/*    val  gene_quant_fn = "${outputPrefix}_rsem.genes.results"
-
-    val gCount = calculate_number_of_genes_detected(gene_quant_fn)
-    var gene_qc = qcr(gCount)
-    val jsonAdapter = moshi.adapter(qcr::class.java)
-
-    val json = jsonAdapter.toJson(gene_qc)
-
-    val qcFile = outDir.resolve("${outputPrefix}_number_of_genes_detected.json")
-    File(qcFile.toString()).writeText(json)*/
-
-
+    // delete unpacked index
+    indexDir.toFile().deleteRecursively()
 
 }

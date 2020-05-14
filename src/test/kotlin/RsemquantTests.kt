@@ -1,20 +1,38 @@
 import org.junit.jupiter.api.*
 import step.*
 import testutil.*
-import testutil.cmdRunner
-import testutil.setupTest
 import java.nio.file.*
 import org.assertj.core.api.Assertions.*
 
-class RsemquantTests {
+class RSEMQuantTests {
+
     @BeforeEach fun setup() = setupTest()
     @AfterEach fun cleanup() = cleanupTest()
 
-     @Test fun `run rsem quant file `() {
+    @Test fun `test RSEM unstranded, single end`() {
+       
+        cmdRunner.runRSEMQuant(
+            RSEMParameters(
+                bam = getResourcePath("ENCFF648GBR.chrM.subsampled.bam"),
+                index = getResourcePath("test.index.tar.gz"),
+                outputDirectory = testDir,
+                outputPrefix = "output",
+                pairedEnd = false
+            )
+        )
 
-     //    cmdRunner.rsem(F1,null, CTL_INDEX, false,"star","libraryID",4,15, testOutputDir,"testaligner")
-         //assertThat(testOutputDir.resolve("mergedta.pooled.tagAlign.gz")).exists()
+        assertThat(testDir.resolve("output.genes.results")).exists()
+        assertThat(pearsonr(
+            readQuantifications(testDir.resolve("output.genes.results")),
+            readQuantifications(getResourcePath("genes.expected.results"))
+        )).isGreaterThan(0.9F)
 
+        assertThat(testDir.resolve("output.isoforms.results")).exists()
+        assertThat(pearsonr(
+            readQuantifications(testDir.resolve("output.isoforms.results")),
+            readQuantifications(getResourcePath("isoforms.expected.results"))
+        )).isGreaterThan(0.9F)
+        
     }
 
 }

@@ -6,38 +6,40 @@ import util.*
 import java.nio.file.*
 import util.CmdRunner
 
-
 fun main(args: Array<String>) = Cli().main(args)
 
 class Cli : CliktCommand() {
-    private val rsemIndex: Path by option("-rsemindex", help = "path to rsem index file")
-            .path().required()
-    private val annoBamFile:Path by option("-annobam", help = "path to annotation bam file")
-            .path().required()
 
-    private val pairedEnd: Boolean by option("-pairedEnd", help = "Paired-end BAM.").flag()
-    private val readStrand:String by option("-readstrand",help = "read strand").choice("forward","reverse","Unstranded").required()
-    private val rndSeed: Int by option("-randomseed", help = "Number of cpus available.").int().default(12345)
-
-    private val outputPrefix: String by option("-outputPrefix", help = "output file name prefix; defaults to 'output'").default("output")
-    private val outDir by option("-outputDir", help = "path to output Directory")
+    private val index: Path by option("--index", help = "path to RSEM index tarball")
         .path().required()
-    private val ncpus: Int by option("-ncpus", help = "Number of cpus available.").int().default(4)
-    private val ramGB: Int by option("-ramGB", help = "Amount of RAM available in GB").int().default(8)
+    private val bam: Path by option("--bam", help = "path to BAM file containing transcriptome alignments")
+        .path().required()
+    private val pairedEnd: Boolean by option("--paired-end", help = "specifies that the input BAM is paired-end").flag()
+    private val strand: String by option("--strand",help = "specifies that reads belong to the given genomic strand")
+        .choice("forward", "reverse", "unstranded").default("unstranded")
+    private val seed: Int? by option("--seed", help = "if provided, uses the given seed for random number generation")
+        .int()
+
+    private val outputPrefix: String by option("--output-prefix", help = "output file name prefix; defaults to 'output'").default("output")
+    private val outputDirectory by option("-output-directory", help = "path to output directory")
+        .path().required()
+    private val cores: Int by option("--cores", help = "number of cores available to the task").int().default(1)
+    private val ram: Int by option("--ram-gb", help = "amount of RAM available to the task, in GB").int().default(16)
 
     override fun run() {
-        val cmdRunner = DefaultCmdRunner()
-        cmdRunner.runTask(rsemIndex,annoBamFile, pairedEnd,readStrand,rndSeed,ncpus,ramGB,outDir,outputPrefix)
+        DefaultCmdRunner().runRSEMQuant(
+            RSEMParameters(
+                index = index,
+                bam = bam,
+                pairedEnd = pairedEnd,
+                strand = strand,
+                seed = seed,
+                outputPrefix = outputPrefix,
+                outputDirectory = outputDirectory,
+                cores = cores,
+                ram = ram
+            )
+        )
     }
-}
 
-/**
- * Runs pre-processing and bwa for raw input files
- *
- * @param taFiles pooledTa Input
- * @param outDir Output Path
- */
-fun CmdRunner.runTask(rsemIndex:Path,annoBamFile:Path, pairedEnd:Boolean,readStrand:String,rndSeed:Int,ncpus:Int,ramGB:Int,outDir:Path,outputPrefix:String) {
-
-    rsemquant(rsemIndex,annoBamFile, pairedEnd,readStrand,rndSeed,ncpus,ramGB,outDir,outputPrefix)
 }
