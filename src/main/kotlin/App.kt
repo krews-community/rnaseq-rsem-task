@@ -20,8 +20,9 @@ class Cli : CliktCommand() {
     private val seed: Int? by option("--seed", help = "if provided, uses the given seed for random number generation")
         .int()
 
-    private val outputPrefix: String by option("--output-prefix", help = "output file name prefix; defaults to 'output'").default("output")
-    private val outputDirectory by option("-output-directory", help = "path to output directory")
+    private val outputPrefix: String by option("--output-prefix", help = "output file name prefix; defaults to 'output'")
+        .default("output")
+    private val outputDirectory: Path by option("--output-directory", help = "path to output directory")
         .path().required()
     private val cores: Int by option("--cores", help = "number of cores available to the task").int().default(1)
     private val ram: Int by option("--ram-gb", help = "amount of RAM available to the task, in GB").int().default(16)
