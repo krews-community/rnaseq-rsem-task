@@ -44,8 +44,10 @@ fun CmdRunner.runRSEMQuant(parameters: RSEMParameters)  {
             ${ if (parameters.pairedEnd) "--paired-end" else "" } \
             ${parameters.bam} \
             ${parameters.outputDirectory.resolve(parameters.index.getFileName().toString().split(".tar.gz")[0])} \
-            ${parameters.outputDirectory.resolve("${parameters.outputPrefix}")} && \
-        chmod -R 666 ${parameters.outputDirectory.resolve("${parameters.outputPrefix}.stat")}
+            ${parameters.outputDirectory.resolve("${parameters.outputPrefix}")}
     """)
+
+    // delete unnecessary stat directory
+    parameters.outputDirectory.resolve("${parameters.outputPrefix}.stat").toFile().deleteRecursively()
 
 }
