@@ -28,9 +28,7 @@ val FORWARD_PROB: Map<String, Float> = mapOf(
 fun CmdRunner.runRSEMQuant(parameters: RSEMParameters)  {
 
     // create output directory, unpack index
-    val indexDir = parameters.outputDirectory.resolve("index")
-    Files.createDirectories(indexDir)
-    this.run("tar xvf ${parameters.index} -C $indexDir")
+    this.run("tar xvf ${parameters.index} -C ${parameters.outputDirectory}")
     
     // run RSEM
     this.run("""
@@ -45,11 +43,9 @@ fun CmdRunner.runRSEMQuant(parameters: RSEMParameters)  {
             --forward-prob ${FORWARD_PROB[parameters.strand]} \
             ${ if (parameters.pairedEnd) "--paired-end" else "" } \
             ${parameters.bam} \
-            ${indexDir.resolve(parameters.index.getFileName().toString().split(".tar.gz")[0])} \
-            ${parameters.outputDirectory.resolve("${parameters.outputPrefix}")}
+            ${parameters.outputDirectory.resolve(parameters.index.getFileName().toString().split(".tar.gz")[0])} \
+            ${parameters.outputDirectory.resolve("${parameters.outputPrefix}")} && \
+        chmod -R 666 ${parameters.outputDirectory.resolve("${parameters.outputPrefix}.stat")}
     """)
-
-    // delete unpacked index
-    indexDir.toFile().deleteRecursively()
 
 }
