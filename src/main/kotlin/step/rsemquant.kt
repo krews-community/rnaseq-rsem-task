@@ -16,7 +16,8 @@ data class RSEMParameters (
     val cores: Int = 1,
     val ram: Int = 16,
     val outputPrefix: String = "output",
-    val pairedEnd: Boolean
+    val pairedEnd: Boolean,
+    val indexTarPrefix: String? = null
 )
 
 val FORWARD_PROB: Map<String, Float> = mapOf(
@@ -29,6 +30,7 @@ fun CmdRunner.runRSEMQuant(parameters: RSEMParameters)  {
 
     // create output directory, unpack index
     this.run("tar xvf ${parameters.index} -C ${parameters.outputDirectory}")
+    if (parameters.indexTarPrefix !== null) this.run("mv ${parameters.outputDirectory}/${parameters.indexTarPrefix}/* ${parameters.outputDirectory}")
     
     // run RSEM
     this.run("""
