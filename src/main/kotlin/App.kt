@@ -27,6 +27,7 @@ class Cli : CliktCommand() {
     private val cores: Int by option("--cores", help = "number of cores available to the task").int().default(1)
     private val ram: Int by option("--ram-gb", help = "amount of RAM available to the task, in GB").int().default(16)
     private val indexTarPrefix: String? by option("--index-tar-prefix", help = "the root directory of files in the index tar archive")
+    private val indexNamePrefix: String? by option("--index-name-prefix", help = "prefix of the name of the files in the index tar archive")
 
     override fun run() {
         DefaultCmdRunner().runRSEMQuant(
@@ -40,7 +41,8 @@ class Cli : CliktCommand() {
                 outputDirectory = outputDirectory,
                 cores = cores,
                 ram = ram,
-		indexTarPrefix = indexTarPrefix
+		indexTarPrefix = indexTarPrefix,
+		indexNamePrefix = indexNamePrefix
             )
         )
     }

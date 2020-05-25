@@ -17,7 +17,8 @@ data class RSEMParameters (
     val ram: Int = 16,
     val outputPrefix: String = "output",
     val pairedEnd: Boolean,
-    val indexTarPrefix: String? = null
+    val indexTarPrefix: String? = null,
+    val indexNamePrefix: String? = null
 )
 
 val FORWARD_PROB: Map<String, Float> = mapOf(
@@ -31,6 +32,7 @@ fun CmdRunner.runRSEMQuant(parameters: RSEMParameters)  {
     // create output directory, unpack index
     this.run("tar xvf ${parameters.index} -C ${parameters.outputDirectory}")
     if (parameters.indexTarPrefix !== null) this.run("mv ${parameters.outputDirectory}/${parameters.indexTarPrefix}/* ${parameters.outputDirectory}")
+    val indexNamePrefix = if (parameters.indexNamePrefix !== null) parameters.indexNamePrefix else parameters.index.getFileName().toString().split(".tar.gz")[0]
     
     // run RSEM
     this.run("""
@@ -45,7 +47,7 @@ fun CmdRunner.runRSEMQuant(parameters: RSEMParameters)  {
             --forward-prob ${FORWARD_PROB[parameters.strand]} \
             ${ if (parameters.pairedEnd) "--paired-end" else "" } \
             ${parameters.bam} \
-            ${parameters.outputDirectory.resolve(parameters.index.getFileName().toString().split(".tar.gz")[0])} \
+            ${parameters.outputDirectory.resolve(indexNamePrefix)} \
             ${parameters.outputDirectory.resolve("${parameters.outputPrefix}")}
     """)
 
